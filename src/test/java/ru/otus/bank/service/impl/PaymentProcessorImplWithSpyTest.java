@@ -9,6 +9,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.mockito.verification.VerificationMode;
 import ru.otus.bank.dao.AccountDao;
 import ru.otus.bank.entity.Account;
 import ru.otus.bank.entity.Agreement;
@@ -80,6 +81,8 @@ public class PaymentProcessorImplWithSpyTest {
             assertEquals(new BigDecimal(80), captor.getAllValues().get(2).getAmount());
             assertEquals(new BigDecimal(20), captor.getAllValues().get(3).getAmount());
         }
+        verify(accountService, times(2)).getAccounts(argThat(argument -> argument != null && (argument.getId() == 1L || argument.getId() == 2L)));
+        verify(accountService).makeTransfer(10L, 20L, transferAmount);
     }
 
     @Test
@@ -99,10 +102,13 @@ public class PaymentProcessorImplWithSpyTest {
         when(accountService.makeTransfer(10L, 20L, transferAmount)).thenCallRealMethod();
 
         boolean result = paymentProcessor.makeTransferWithComission(sourceAgreement, destinationAgreement, 0, 0, transferAmount, comissionPercent);
+
         assertTrue(result);
-        if (result) {
-            assertEquals(new BigDecimal(78), captor.getAllValues().get(3).getAmount());
-            assertEquals(new BigDecimal(20), captor.getAllValues().get(5).getAmount());
-        }
+        assertEquals(new BigDecimal(78), captor.getAllValues().get(3).getAmount());
+        assertEquals(new BigDecimal(20), captor.getAllValues().get(5).getAmount());
+
+        verify(accountService, times(2)).getAccounts(argThat(argument -> argument != null && (argument.getId() == 1L || argument.getId() == 2L)));
+        verify(accountService, times(1)).charge(10L, BigDecimal.ONE);
+        verify(accountService).makeTransfer(10L, 20L, transferAmount);
     }
 }
