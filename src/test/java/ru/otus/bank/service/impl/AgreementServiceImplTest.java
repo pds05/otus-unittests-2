@@ -3,6 +3,7 @@ package ru.otus.bank.service.impl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import ru.otus.bank.dao.AgreementDao;
@@ -10,9 +11,12 @@ import ru.otus.bank.entity.Agreement;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 public class AgreementServiceImplTest {
 
-    private AgreementDao dao = Mockito.mock(AgreementDao.class);
+    private AgreementDao dao = mock(AgreementDao.class);
 
     AgreementServiceImpl agreementServiceImpl;
 
@@ -28,13 +32,13 @@ public class AgreementServiceImplTest {
         agreement.setId(10L);
         agreement.setName(name);
 
-        Mockito.when(dao.findByName(name)).thenReturn(
+        when(dao.findByName(name)).thenReturn(
                 Optional.of(agreement));
 
         Optional<Agreement> result = agreementServiceImpl.findByName(name);
 
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(10, agreement.getId());
+        assertTrue(result.isPresent());
+        assertEquals(10, agreement.getId());
     }
 
     @Test
@@ -46,14 +50,31 @@ public class AgreementServiceImplTest {
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
-        Mockito.when(dao.findByName(captor.capture())).thenReturn(
+        when(dao.findByName(captor.capture())).thenReturn(
                 Optional.of(agreement));
 
         Optional<Agreement> result = agreementServiceImpl.findByName(name);
 
-        Assertions.assertEquals("test", captor.getValue());
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(10, agreement.getId());
+        assertEquals("test", captor.getValue());
+        assertTrue(result.isPresent());
+        assertEquals(10, agreement.getId());
     }
 
+    @Test
+    public void addAgreementTest() {
+        String name = "Agreement 1";
+
+        when(dao.save(any())).thenAnswer(invocationOnMock -> {
+            Agreement oldAgreement = invocationOnMock.getArgument(0);
+            Agreement newAgreement = new Agreement();
+            newAgreement.setId(1L);
+            newAgreement.setName(oldAgreement.getName());
+            return newAgreement;
+        });
+        Agreement result = agreementServiceImpl.addAgreement(name);
+
+        assertEquals(1L, result.getId());
+
+        verify(dao).save(argThat(agreement -> agreement.getId() == null && agreement.getName().equals(name)));
+    }
 }
